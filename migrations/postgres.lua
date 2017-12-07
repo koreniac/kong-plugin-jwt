@@ -1,4 +1,4 @@
-local plugin_config_iterator = require("kong.dao.migrations.helpers").plugin_config_iterator
+local plugin_config_iterator = require("kong.plugins.jwt-custom.migrations.helpers").plugin_config_iterator
 
 return {
   {
