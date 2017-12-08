@@ -80,7 +80,7 @@ local function load_consumer(consumer_id, anonymous)
   return result
 end
 
-local function set_consumer(consumer, jwt_secret, token)
+local function set_consumer(consumer, jwt_secret, token, claims)
   ngx_set_header(constants.HEADERS.CONSUMER_ID, consumer.id)
   ngx_set_header(constants.HEADERS.CONSUMER_CUSTOM_ID, consumer.custom_id)
   ngx_set_header(constants.HEADERS.CONSUMER_USERNAME, consumer.username)
@@ -89,6 +89,17 @@ local function set_consumer(consumer, jwt_secret, token)
     ngx.ctx.authenticated_credential = jwt_secret
     ngx.ctx.authenticated_jwt_token = token
     ngx_set_header(constants.HEADERS.ANONYMOUS, nil) -- in case of auth plugins concatenation
+
+    -- Send the claims with names prefixed with 'X-PROXY-' to the destination
+    -- as headers.
+    for claim_key, claim_value in pairs(claims) do
+      claim_key = string.upper(claim_key)
+      local claim_header_prefix = 'X-PROXY-';
+      if string.sub(claim_key,1,string.len(claim_header_prefix))=='X-PROXY-' then
+        ngx_set_header(claim_key, claim_value)
+      end
+    end
+
   else
     ngx_set_header(constants.HEADERS.ANONYMOUS, true)
   end
@@ -178,7 +189,7 @@ local function do_authentication(conf)
     return false, {status = 403, message = string_format("Could not find consumer for '%s=%s'", conf.key_claim_name, jwt_secret_key)}
   end
 
-  set_consumer(consumer, jwt_secret, token)
+  set_consumer(consumer, jwt_secret, token, claims)
 
   return true
 end
@@ -209,7 +220,7 @@ function JwtHandler:access(conf)
       if err then
         return responses.send_HTTP_INTERNAL_SERVER_ERROR(err)
       end
-      set_consumer(consumer, nil, nil)
+      set_consumer(consumer, nil, nil, nil)
     else
       return responses.send(err.status, err.message)
     end
