@@ -4,7 +4,7 @@ local function check_user(anonymous)
   if anonymous == "" or utils.is_valid_uuid(anonymous) then
     return true
   end
-  
+
   return false, "the anonymous user must be empty or a valid uuid"
 end
 
@@ -17,6 +17,7 @@ return {
     secret_is_base64 = {type = "boolean", default = false},
     claims_to_verify = {type = "array", enum = {"exp", "nbf"}},
     anonymous = {type = "string", default = "", func = check_user},
-    run_on_preflight = {type = "boolean", default = true},
+    -- run_on_preflight = {type = "boolean", default = true},
+    -- run_on ... typedef/field was removed in Kong 2.x
   },
 }
